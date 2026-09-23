@@ -1,0 +1,236 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   RETAIL//AI — NEOBRUTALIST DESIGN TOKENS
+   One fixed palette: off-white paper, black structure.
+   Accent colour carries meaning, never decoration:
+   lime = healthy | coral = critical | yellow = warning
+   blue = analytics | purple = AI / prediction
+   ============================================================ */
+:root {
+  --c-ink: 17 17 17;
+  --c-paper: 245 241 232;
+  --c-surface: 255 255 255;
+  --c-muted: 104 104 104;
+
+  --c-blue: 37 99 235;
+  --c-lime: 163 230 53;
+  --c-yellow: 250 204 21;
+  --c-coral: 255 90 95;
+  --c-purple: 139 92 246;
+
+  --grid-line: rgb(17 17 17 / 0.07);
+}
+
+@layer base {
+  * {
+    border-color: rgb(var(--c-ink));
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+    font-variation-settings: 'wght' 480;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Numbers and labels read like a machine readout */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: rgb(var(--c-lime));
+    color: #111111;
+  }
+
+  :focus-visible {
+    outline: 3px solid rgb(var(--c-ink));
+    outline-offset: 2px;
+  }
+
+  /* Chunky scrollbars — part of the physical-control-panel feel */
+  .brutal-scroll {
+    scrollbar-color: rgb(var(--c-ink)) transparent;
+    scrollbar-width: thin;
+  }
+  .brutal-scroll::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+  }
+  .brutal-scroll::-webkit-scrollbar-track {
+    background: rgb(var(--c-ink) / 0.08);
+  }
+  .brutal-scroll::-webkit-scrollbar-thumb {
+    background: rgb(var(--c-ink));
+    border: 2px solid rgb(var(--c-paper));
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer components {
+  /* ---------- Physical press behaviour -------------------------------
+     Buttons travel toward their own shadow. Hover: 3px, active: 6px.  */
+  .press {
+    box-shadow: 5px 5px 0 0 rgb(var(--c-ink));
+    transition:
+      transform 130ms cubic-bezier(0.2, 0.9, 0.2, 1),
+      box-shadow 130ms cubic-bezier(0.2, 0.9, 0.2, 1),
+      background-color 130ms linear;
+  }
+  .press:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 3px 3px 0 0 rgb(var(--c-ink));
+  }
+  .press:active {
+    transform: translate(5px, 5px);
+    box-shadow: 0 0 0 0 rgb(var(--c-ink));
+  }
+  .press:disabled {
+    transform: none;
+    box-shadow: 2px 2px 0 0 rgb(var(--c-ink));
+    @apply cursor-not-allowed opacity-45;
+  }
+
+  /* Smaller sibling used inside dense panels */
+  .press-sm {
+    box-shadow: 3px 3px 0 0 rgb(var(--c-ink));
+    transition:
+      transform 130ms cubic-bezier(0.2, 0.9, 0.2, 1),
+      box-shadow 130ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  }
+  .press-sm:hover {
+    transform: translate(1.5px, 1.5px);
+    box-shadow: 1.5px 1.5px 0 0 rgb(var(--c-ink));
+  }
+  .press-sm:active {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 0 rgb(var(--c-ink));
+  }
+
+  /* ---------- Card lift ---------------------------------------------- */
+  .lift {
+    transition:
+      transform 160ms cubic-bezier(0.2, 0.9, 0.2, 1),
+      box-shadow 160ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  }
+  .lift:hover {
+    transform: translate(-3px, -3px);
+    box-shadow: 8px 8px 0 0 rgb(var(--c-ink));
+  }
+
+  /* ---------- Texture ------------------------------------------------- */
+  .grid-paper {
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 26px 26px;
+  }
+
+  .dot-paper {
+    background-image: radial-gradient(var(--grid-line) 1.4px, transparent 1.4px);
+    background-size: 18px 18px;
+  }
+
+  .diag-stripes {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      rgb(17 17 17 / 0.72) 0 2px,
+      transparent 2px 7px
+    );
+  }
+
+  .hi-contrast-title {
+    letter-spacing: -0.045em;
+    line-height: 0.86;
+    text-transform: uppercase;
+    font-variation-settings: 'wght' 700;
+  }
+
+  /* A single hard scanline sweeping the vision feed — the only motion
+     allowed inside the camera view. */
+  .scanline {
+    height: 10%;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgb(var(--c-ink) / 0.05) 45%,
+      rgb(var(--c-ink) / 0.16) 50%,
+      rgb(var(--c-ink) / 0.05) 55%,
+      transparent 100%
+    );
+    animation: scan 6.5s linear infinite;
+  }
+
+  @keyframes scan {
+    0% {
+      transform: translateY(-110%);
+    }
+    100% {
+      transform: translateY(1010%);
+    }
+  }
+
+  /* Recharts chrome removal so charts read flat, never glossy */
+  .recharts-wrapper :focus,
+  .recharts-surface:focus {
+    outline: none !important;
+  }
+  .recharts-cartesian-axis-tick text {
+    font-family: '"IBM Plex Mono"', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+  }
+}
+
+@layer utilities {
+  .text-stroke-ink {
+    -webkit-text-stroke: 2px rgb(var(--c-ink));
+    color: transparent;
+  }
+
+  .shadow-hard-ink {
+    text-shadow: 3px 3px 0 rgb(var(--c-ink));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+
+  /* Explicit motion opt-out, seeded from the OS preference.
+     The OS preference is honoured by default via the same rules. */
+  .reduce-motion *,
+  .reduce-motion *::before,
+  .reduce-motion *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  /* Physical control-panel switch */
+  .toggle-track {
+    @apply relative inline-flex h-6 w-12 shrink-0 items-center border-3 border-ink bg-surface transition-colors;
+  }
+  .toggle-knob {
+    @apply absolute top-0 h-full w-1/2 border-3 border-ink transition-transform duration-150;
+  }
+}
