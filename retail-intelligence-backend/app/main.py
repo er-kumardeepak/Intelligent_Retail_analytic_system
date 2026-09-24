@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pymongo.errors import PyMongoError
 
 from app.api.routes import alerts, auth, cameras, dashboard, events, queues, shelves
+from app.api.websocket import router as websocket_router
 from app.core.config import get_logger, get_settings, setup_logging
 from app.core.database import (
     close_mongo_connection,
@@ -53,6 +54,7 @@ app.include_router(cameras.router, prefix="/api")
 app.include_router(events.router, prefix="/api")
 app.include_router(queues.router, prefix="/api")
 app.include_router(shelves.router, prefix="/api")
+app.include_router(websocket_router, prefix="/api")
 
 
 @app.get("/api/health", summary="Health check")
@@ -65,3 +67,14 @@ async def health() -> dict[str, object]:
             "last_error": None if mongo_ok else last_connection_error(),
         },
     }
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        "app.main:app",
+        host=settings.host,
+        port=settings.port,
+        reload=settings.environment == "development",
+    )

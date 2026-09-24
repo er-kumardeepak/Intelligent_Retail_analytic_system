@@ -2,13 +2,15 @@ import { useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppStateProvider } from '@/lib/app-state';
 import { AuthProvider, useAuth } from '@/lib/auth';
-import { LiveProvider } from '@/lib/live-store';
+import { DataProvider } from '@/lib/data';
 import { AppShell } from '@/components/layout/AppShell';
 
 import SignIn from '@/pages/SignIn';
 import Overview from '@/pages/Overview';
 import InventoryAnalytics from '@/pages/InventoryAnalytics';
 import QueueAnalytics from '@/pages/QueueAnalytics';
+import Alerts from '@/pages/Alerts';
+import Recommendations from '@/pages/Recommendations';
 import NotFound from '@/pages/NotFound';
 
 function ScrollToTop() {
@@ -37,28 +39,33 @@ function RequireAuth() {
     return <Navigate to="/sign-in" state={{ from: location.pathname }} replace />;
   }
 
-  return <AppShell />;
+  // Polling starts only once a session exists, so the sign-in screen never
+  // hits the data endpoints.
+  return (
+    <DataProvider>
+      <AppShell />
+    </DataProvider>
+  );
 }
 
 export default function App() {
   return (
     <AuthProvider>
       <AppStateProvider>
-        <LiveProvider>
-          <BrowserRouter>
-            <ScrollToTop />
-            <Routes>
-              <Route path="/sign-in" element={<SignIn />} />
-              <Route element={<RequireAuth />}>
-                <Route path="/" element={<Overview />} />
-                <Route path="/overview" element={<Overview />} />
-                <Route path="/inventory-analytics" element={<InventoryAnalytics />} />
-                <Route path="/queue-analytics" element={<QueueAnalytics />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </LiveProvider>
+        <BrowserRouter>
+          <ScrollToTop />
+          <Routes>
+            <Route path="/sign-in" element={<SignIn />} />
+            <Route element={<RequireAuth />}>
+              <Route path="/" element={<Overview />} />
+              <Route path="/inventory" element={<InventoryAnalytics />} />
+              <Route path="/queue" element={<QueueAnalytics />} />
+              <Route path="/alerts" element={<Alerts />} />
+              <Route path="/recommendations" element={<Recommendations />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
       </AppStateProvider>
     </AuthProvider>
   );
