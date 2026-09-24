@@ -25,7 +25,8 @@ export interface Metric {
   unit?: string;
   display?: string;
   precision?: number;
-  trend: Trend;
+  /** Omitted when the backend has no comparable previous period. */
+  trend?: Trend;
   tone: Tone;
   footnote: string;
 }

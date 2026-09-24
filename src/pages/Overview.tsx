@@ -1,106 +1,174 @@
-import type { Metric } from '@/lib/types';
-import { AlertCard, BrutalCard, CameraFeed, MetricCard, StatusBadge } from '@/components/brutal';
-import { Stack } from '@/components/layout/Page';
-import { ALERTS, CAMERAS } from '@/lib/mock-data';
+import { Link } from 'react-router-dom';
+import { ArrowRight, CheckCircle2, TriangleAlert } from 'lucide-react';
+import { AlertLine, BrutalCard, MetricCard, StatusBadge } from '@/components/brutal';
+import { BlockHeading, Disclosure, Grid, Page, Stack } from '@/components/layout/Page';
+import { useData } from '@/lib/data';
+import { CAMERA_TONE, TONE_SOLID } from '@/lib/tone';
+import { cn } from '@/lib/utils';
+import type { ApiCameraStatus } from '@/lib/api';
 
-const overviewMetrics: Metric[] = [
-  {
-    id: 'current-customers',
-    label: 'Current Customers',
-    value: 128,
-    trend: { value: 12, direction: 'up', good: true, label: 'vs 15 min ago' },
-    tone: 'blue',
-    footnote: 'Across all tracked entrances',
-  },
-  {
-    id: 'footfall',
-    label: "Today's Footfall",
-    value: 2140,
-    trend: { value: 18, direction: 'up', good: true, label: 'vs yesterday' },
-    tone: 'lime',
-    footnote: 'Daily store traffic so far',
-  },
-  {
-    id: 'alerts',
-    label: 'Active Alerts',
-    value: 4,
-    trend: { value: -25, direction: 'down', good: true, label: 'vs last hour' },
-    tone: 'coral',
-    footnote: '2 critical, 2 warnings',
-  },
-  {
-    id: 'queue',
-    label: 'Average Queue',
-    value: 6,
-    trend: { value: 9, direction: 'up', good: false, label: 'vs 15 min ago' },
-    tone: 'yellow',
-    footnote: 'Customers waiting at checkout',
-  },
-];
-
-const cameraCards = [
-  { label: 'Entrance Camera', camera: CAMERAS[0] },
-  { label: 'Store Camera', camera: CAMERAS[1] },
-  { label: 'Checkout Camera', camera: CAMERAS[2] },
-  { label: 'Shelf Camera', camera: CAMERAS[3] },
-];
+const CAMERA_ORDER: ApiCameraStatus[] = ['online', 'warning', 'offline'];
+const CAMERA_LABEL: Record<ApiCameraStatus, string> = {
+  online: 'ONLINE',
+  warning: 'DEGRADED',
+  offline: 'OFFLINE',
+};
 
 export default function Overview() {
-  const recentAlerts = ALERTS.filter((alert) => alert.level !== 'resolved').slice(0, 4);
+  const { store, kpis, alertItems, cameras, overview, lastUpdated } = useData();
+
+  const activeAlerts = alertItems.filter((alert) => alert.level !== 'resolved').slice(0, 5);
+  const counts = CAMERA_ORDER.map((status) => ({
+    status,
+    count: cameras.filter((camera) => camera.status === status).length,
+  }));
+  const attention = counts
+    .filter((item) => item.status !== 'online' && item.count > 0)
+    .map((item) => `${item.count} ${CAMERA_LABEL[item.status].toLowerCase()}`)
+    .join(' · ');
 
   return (
-    <Stack gap="lg">
-      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        {overviewMetrics.map((metric, index) => (
-          <MetricCard key={metric.id} metric={metric} index={String(index + 1).padStart(2, '0')} emphasis />
-        ))}
-      </section>
-
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-bold uppercase tracking-tightest md:text-2xl">Store Cameras</h2>
-          <StatusBadge tone="lime" size="sm" dot>
-            4 cameras online
+    <Page
+      index="01"
+      eyebrow={store ? `${store.store_id} · ${store.city}` : 'STORE PULSE'}
+      title="Overview"
+      description="A live picture of the active store. Everything here is read from the backend REST API and refreshed on a timer — no simulated data."
+      tone="blue"
+      actions={
+        overview && (
+          <StatusBadge tone="blue" size="lg" outline>
+            {overview.cameras_online}/{overview.cameras_total} CAMERAS ONLINE
           </StatusBadge>
-        </div>
+        )
+      }
+    >
+      <Stack gap="lg">
+        {/* Headline numbers */}
+        <Grid cols={4}>
+          {kpis.map((metric, index) => (
+            <MetricCard
+              key={metric.id}
+              metric={metric}
+              index={String(index + 1).padStart(2, '0')}
+              emphasis
+            />
+          ))}
+        </Grid>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {cameraCards.map(({ label, camera }) => (
-            <BrutalCard key={label} className="overflow-hidden p-3" interactive>
-              <div className="mb-3 flex items-center justify-between gap-3">
+        {/* Needs attention */}
+        <Stack gap="sm">
+          <BlockHeading
+            right={
+              <Link
+                to="/alerts"
+                className="press-sm flex items-center gap-1.5 rounded-brutal border-3 border-ink bg-surface px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-mega hover:bg-yellow"
+              >
+                ALL ALERTS
+                <ArrowRight className="h-3.5 w-3.5" strokeWidth={3} />
+              </Link>
+            }
+          >
+            Needs attention
+          </BlockHeading>
+
+          <BrutalCard padding="none" tone={activeAlerts.length > 0 ? 'coral' : 'lime'}>
+            {activeAlerts.length > 0 ? (
+              <ul className="divide-y-3 divide-ink/15">
+                {activeAlerts.map((alert) => (
+                  <li key={alert.id}>
+                    <AlertLine alert={alert} />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="flex items-center gap-3 p-5">
+                <CheckCircle2 className="h-6 w-6 shrink-0 text-lime" strokeWidth={3} />
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-mega text-muted">Camera</p>
-                  <p className="mt-1 text-base font-bold uppercase tracking-wide">{label}</p>
+                  <p className="font-bold uppercase tracking-tightest">All clear</p>
+                  <p className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-muted">
+                    No active alerts in this store
+                  </p>
                 </div>
-                <StatusBadge tone={camera.status === 'online' ? 'lime' : 'yellow'} size="sm" dot>
-                  {camera.status === 'online' ? 'Live' : 'Online'}
-                </StatusBadge>
               </div>
-              <CameraFeed
-                camera={camera}
-                queue={camera.id === 'CAM-03' ? 6 : 3}
-                shelfFill={camera.id === 'CAM-04' ? 42 : 89}
-                persons={12}
-                compact
-                className="border-0"
-              />
-            </BrutalCard>
-          ))}
-        </div>
-      </section>
+            )}
+          </BrutalCard>
+        </Stack>
 
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-bold uppercase tracking-tightest md:text-2xl">Recent Alerts</h2>
-          <span className="font-mono text-[10px] uppercase tracking-mega text-muted">Latest 4</span>
-        </div>
+        {/* Camera fleet */}
+        <Stack gap="sm">
+          <BlockHeading
+            right={
+              <span className="font-mono text-[10px] uppercase tracking-mega text-muted">
+                {attention || 'FULL COVERAGE'}
+              </span>
+            }
+          >
+            Camera fleet
+          </BlockHeading>
 
-        <div className="grid gap-3">
-          {recentAlerts.map((alert) => (
-            <AlertCard key={alert.id} alert={alert} compact />
-          ))}
-        </div>
-      </section>
-    </Stack>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {counts.map((item) => (
+              <div
+                key={item.status}
+                className="flex items-center gap-3 rounded-brutal border-3 border-ink bg-surface p-3 shadow-brutal-xs"
+              >
+                <span
+                  className={cn(
+                    'h-8 w-2 shrink-0 border-2 border-ink',
+                    TONE_SOLID[CAMERA_TONE[item.status]],
+                  )}
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <p className="font-mono text-[9px] font-bold uppercase tracking-mega text-muted">
+                    {CAMERA_LABEL[item.status]}
+                  </p>
+                  <p className="text-2xl font-bold leading-none tracking-tightest tnum">
+                    {item.count}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Secondary detail stays collapsed until asked for. */}
+          <Disclosure summary="Camera-by-camera health" hint={`${cameras.length} enrolled`}>
+            {cameras.length > 0 ? (
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {cameras.map((camera) => (
+                  <li
+                    key={camera.camera_id}
+                    className="flex items-center justify-between gap-3 rounded-brutal border-3 border-ink/20 bg-ink/[0.02] px-3 py-2"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-[11px] font-bold uppercase tracking-wide">
+                        {camera.camera_id} · {camera.name}
+                      </span>
+                      <span className="block truncate font-mono text-[9px] uppercase tracking-wider text-muted">
+                        {camera.zone}
+                      </span>
+                    </span>
+                    <StatusBadge tone={CAMERA_TONE[camera.status]} size="sm">
+                      {CAMERA_LABEL[camera.status]}
+                    </StatusBadge>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="font-mono text-[10px] uppercase tracking-wider text-muted">
+                No cameras enrolled for this store.
+              </p>
+            )}
+          </Disclosure>
+        </Stack>
+
+        {lastUpdated && (
+          <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-mega text-muted">
+            <TriangleAlert className="h-3.5 w-3.5" strokeWidth={3} />
+            Data polled from the REST API · refreshed every 5 seconds
+          </p>
+        )}
+      </Stack>
+    </Page>
   );
 }

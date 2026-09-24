@@ -1,17 +1,9 @@
 import {
-  Activity,
   AlertTriangle,
-  BarChart3,
   Boxes,
-  Camera,
-  FileText,
   LayoutDashboard,
-  LineChart,
-  Settings as SettingsIcon,
-  ShieldCheck,
   Sparkles,
   Timer,
-  Users,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -20,7 +12,7 @@ export interface NavItem {
   label: string;
   short: string;
   icon: LucideIcon;
-  /** Key into the live alert feed, used to render a count badge. */
+  /** Key into the REST alert feed, used to render a count badge. */
   badge?: 'alerts' | 'recommendations';
   /** Shows in the mobile bottom bar. */
   mobile?: boolean;
@@ -32,40 +24,40 @@ export interface NavGroup {
   items: NavItem[];
 }
 
+/** Every route here exists in App.tsx. Keep the two in step. */
 export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'operations',
     label: 'OPERATIONS',
     items: [
       { to: '/', label: 'Overview', short: 'HOME', icon: LayoutDashboard, mobile: true },
-      { to: '/live', label: 'Live Analytics', short: 'LIVE', icon: Activity, mobile: true },
-      { to: '/analytics', label: 'Store Analytics', short: 'ANALYTICS', icon: BarChart3 },
-      { to: '/shelves', label: 'Shelf Monitoring', short: 'SHELVES', icon: Boxes, mobile: true },
-      { to: '/queue', label: 'Queue Monitoring', short: 'QUEUE', icon: Timer, mobile: true },
-      { to: '/flow', label: 'Customer Flow', short: 'FLOW', icon: Users },
+      { to: '/inventory', label: 'Inventory Analytics', short: 'STOCK', icon: Boxes, mobile: true },
+      { to: '/queue', label: 'Queue Analytics', short: 'QUEUE', icon: Timer, mobile: true },
     ],
   },
   {
     id: 'intelligence',
     label: 'INTELLIGENCE',
     items: [
-      { to: '/predictions', label: 'Predictions', short: 'PREDICT', icon: LineChart },
-      { to: '/recommendations', label: 'Recommendations', short: 'ACTIONS', icon: Sparkles, badge: 'recommendations' },
-      { to: '/alerts', label: 'Alerts', short: 'ALERTS', icon: AlertTriangle, badge: 'alerts' },
-    ],
-  },
-  {
-    id: 'system',
-    label: 'PLATFORM',
-    items: [
-      { to: '/cameras', label: 'Cameras', short: 'CAMERAS', icon: Camera },
-      { to: '/privacy', label: 'Privacy', short: 'PRIVACY', icon: ShieldCheck },
-      { to: '/reports', label: 'Reports', short: 'REPORTS', icon: FileText },
-      { to: '/settings', label: 'Settings', short: 'SETTINGS', icon: SettingsIcon },
+      {
+        to: '/alerts',
+        label: 'Alerts',
+        short: 'ALERTS',
+        icon: AlertTriangle,
+        badge: 'alerts',
+        mobile: true,
+      },
+      {
+        to: '/recommendations',
+        label: 'Recommendations',
+        short: 'ACTIONS',
+        icon: Sparkles,
+        badge: 'recommendations',
+      },
     ],
   },
 ];
 
-export const ALL_NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
+export const ALL_NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((group) => group.items);
 
-export const MOBILE_NAV_ITEMS: NavItem[] = ALL_NAV_ITEMS.filter((i) => i.mobile);
+export const MOBILE_NAV_ITEMS: NavItem[] = ALL_NAV_ITEMS.filter((item) => item.mobile);

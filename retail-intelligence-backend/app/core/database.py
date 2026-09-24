@@ -8,6 +8,7 @@ temporarily unavailable.
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 from typing import Any, Iterable
 
@@ -96,7 +97,7 @@ def build_client() -> AsyncIOMotorClient:
     )
 
 
-async def connect_to_mongo() -> AsyncIOMotorDatabase:
+async def connect_to_mongo(retries: int = 5, delay_seconds: float = 1.0) -> AsyncIOMotorDatabase:
     """Open the client, verify the server answers, then ensure indexes.
 
     Raises :class:`PyMongoError` so the caller can decide whether to abort or
@@ -108,20 +109,39 @@ async def connect_to_mongo() -> AsyncIOMotorDatabase:
     if _client is None:
         _client = build_client()
 
-    try:
-        await _client.admin.command("ping")
-    except PyMongoError as exc:  # pragma: no cover - depends on the environment
-        _last_connection_error = str(exc)
+    last_error: PyMongoError | None = None
+    for attempt in range(1, retries + 1):
+        try:
+            await _client.admin.command("ping")
+            last_error = None
+            break
+        except PyMongoError as exc:  # pragma: no cover - depends on the environment
+            last_error = exc
+            _last_connection_error = str(exc)
+            logger.warning(
+                "MongoDB ping attempt %d/%d failed at %s: %s",
+                attempt,
+                retries,
+                settings.mongodb_uri,
+                exc,
+            )
+            if attempt < retries:
+                await asyncio.sleep(delay_seconds)
+
+    if last_error is not None:
         logger.error(
-            "MongoDB unreachable at %s: %s", settings.mongodb_uri, exc
+            "MongoDB unreachable at %s: %s", settings.mongodb_uri, last_error
         )
-        raise
+        raise last_error
 
     _database = _client[settings.database_name]
     _last_connection_error = None
     logger.info("Connected to MongoDB database '%s'", settings.database_name)
 
     await ensure_indexes(_database)
+    from app.core.seed import seed_reference_data
+
+    await seed_reference_data(_database)
     return _database
 
 

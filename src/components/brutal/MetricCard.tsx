@@ -42,6 +42,7 @@ export function Sparkline({
 
 function TrendChip({ metric }: { metric: Metric }) {
   const { trend } = metric;
+  if (!trend) return null;
   const Icon =
     trend.direction === 'up' ? ArrowUpRight : trend.direction === 'down' ? ArrowDownRight : ArrowRight;
   const good = trend.good;
@@ -92,7 +93,7 @@ export function MetricCard({ metric, spark, index, className, emphasis }: Metric
           <span className="font-mono text-[10px] font-semibold uppercase leading-tight tracking-mega text-muted">
             {metric.label}
           </span>
-          <TrendChip metric={metric} />
+          {metric.trend && <TrendChip metric={metric} />}
         </div>
 
         <div className="flex items-end gap-1.5">
@@ -142,10 +143,12 @@ export function MetricRow({ metric, className }: { metric: Metric; className?: s
           {metric.value.toFixed(metric.precision ?? 0)}
           <span className="ml-0.5 text-sm">{metric.unit}</span>
         </span>
-        <StatusBadge tone={metric.trend.good ? 'lime' : 'coral'} size="sm">
-          {metric.trend.value > 0 ? '+' : ''}
-          {metric.trend.value}%
-        </StatusBadge>
+        {metric.trend && (
+          <StatusBadge tone={metric.trend.good ? 'lime' : 'coral'} size="sm">
+            {metric.trend.value > 0 ? '+' : ''}
+            {metric.trend.value}%
+          </StatusBadge>
+        )}
       </div>
     </div>
   );
